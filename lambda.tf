@@ -15,42 +15,36 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-data "archive_file" "char_counter_zip" {
+resource "aws_iam_role_policy_attachment" "lambda_vpc_execution" {
+  role       = aws_iam_role.lambda_exec.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+# Archive Lambda function code
+data "archive_file" "lambda_functions" {
+  for_each    = var.lambda_functions
   type        = "zip"
-  source_dir  = "${path.module}/char_counter"
-  output_path = "${path.module}/char_counter.zip"
+  source_dir  = "${path.module}/${each.value.path}"
+  output_path = "${path.module}/${each.key}.zip"
 }
 
-resource "aws_lambda_function" "char_counter" {
-  filename         = data.archive_file.char_counter_zip.output_path
-  function_name    = "character-counter-service"
+# Create Lambda functions dynamically
+resource "aws_lambda_function" "functions" {
+  for_each         = var.lambda_functions
+  filename         = data.archive_file.lambda_functions[each.key].output_path
+  function_name    = each.key
   role             = aws_iam_role.lambda_exec.arn
-  handler          = "lambda_function.lambda_handler"
+  handler          = each.value.handler
   runtime          = "python3.14"
-  source_code_hash = data.archive_file.char_counter_zip.output_base64sha256
-}
+  source_code_hash = data.archive_file.lambda_functions[each.key].output_base64sha256
 
-resource "aws_lambda_function_url" "char_counter_url" {
-  function_name      = aws_lambda_function.char_counter.function_name
-  authorization_type = "NONE"
-}
+  vpc_config {
+    subnet_ids         = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_group_ids = [aws_security_group.lambda_sg.id]
+  }
 
-data "archive_file" "json_validator_zip" {
-  type        = "zip"
-  source_dir  = "${path.module}/json_validator"
-  output_path = "${path.module}/json_validator.zip"
-}
-
-resource "aws_lambda_function" "json_validator" {
-  filename         = data.archive_file.json_validator_zip.output_path
-  function_name    = "json-validator-service"
-  role             = aws_iam_role.lambda_exec.arn
-  handler          = "lambda_function.lambda_handler"
-  runtime          = "python3.14"
-  source_code_hash = data.archive_file.json_validator_zip.output_base64sha256
-}
-
-resource "aws_lambda_function_url" "json_validator_url" {
-  function_name      = aws_lambda_function.json_validator.function_name
-  authorization_type = "NONE"
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_basic_execution,
+    aws_iam_role_policy_attachment.lambda_vpc_execution
+  ]
 }

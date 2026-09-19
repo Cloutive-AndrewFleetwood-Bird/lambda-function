@@ -66,9 +66,25 @@ curl -X POST "https://<url>/json-validator-service" \
 
 ## Infrastructure
 
-- Lambda functions with direct HTTPS URLs
-- S3 remote state storage with versioning and encryption
-- DynamoDB state locking for team collaboration
-- IAM roles with Lambda basic execution permissions
-- Parameter Store integration for URL storage
+- **VPC** with public subnets across 2 availability zones
+- **Application Load Balancer** (ALB) with path-based routing
+- **Lambda functions** (private, no public URLs)
+- **Security Group** with restricted ingress (configurable by CIDR)
+- **Target Groups** for Lambda routing
+- **S3 remote state** storage with versioning and encryption
+- **DynamoDB** state locking for team collaboration
+- **Parameter Store** with ALB endpoint
+
+## Configuration
+
+To restrict ALB access to a specific IP/CIDR, set the `allowed_cidr` variable:
+
+```bash
+terraform apply -var="allowed_cidr=YOUR_IP/32"
+```
+
+Example for a single IP:
+```bash
+terraform apply -var="allowed_cidr=203.0.113.42/32"
+```
 
