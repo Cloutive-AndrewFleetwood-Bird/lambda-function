@@ -15,6 +15,11 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_vpc_execution" {
+  role       = aws_iam_role.lambda_exec.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
 data "archive_file" "char_counter_zip" {
   type        = "zip"
   source_dir  = "${path.module}/char_counter"
@@ -28,6 +33,11 @@ resource "aws_lambda_function" "char_counter" {
   handler          = "lambda_function.lambda_handler"
   runtime          = "python3.14"
   source_code_hash = data.archive_file.char_counter_zip.output_base64sha256
+
+  vpc_config {
+    subnet_ids         = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_group_ids = [aws_security_group.lambda_sg.id]
+  }
 }
 
 data "archive_file" "json_validator_zip" {
@@ -43,4 +53,9 @@ resource "aws_lambda_function" "json_validator" {
   handler          = "lambda_function.lambda_handler"
   runtime          = "python3.14"
   source_code_hash = data.archive_file.json_validator_zip.output_base64sha256
+
+  vpc_config {
+    subnet_ids         = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_group_ids = [aws_security_group.lambda_sg.id]
+  }
 }

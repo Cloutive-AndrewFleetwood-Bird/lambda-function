@@ -35,6 +35,30 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
+resource "aws_security_group" "lambda_sg" {
+  name        = "cinfra-lambda-sg"
+  description = "Security group for Lambda functions"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = 0
+    to_port         = 65535
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "cinfra-lambda-sg"
+  }
+}
+
 resource "aws_s3_bucket" "alb_logs" {
   bucket = "cinfra-alb-logs-${data.aws_caller_identity.current.account_id}"
 
