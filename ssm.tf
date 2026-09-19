@@ -1,25 +1,22 @@
-resource "aws_ssm_parameter" "char_counter_url_param" {
-  name        = "/cinfra/services/char-counter/url"
-  description = "The URL for the Character Counter Lambda"
+resource "aws_ssm_parameter" "alb_endpoint" {
+  name        = "/cinfra/services/alb-endpoint"
+  description = "The ALB endpoint for Lambda services"
   type        = "String"
-  value       = aws_lambda_function_url.char_counter_url.function_url
-  overwrite   = true 
-}
-
-resource "aws_ssm_parameter" "json_validator_url_param" {
-  name        = "/cinfra/services/json-validator/url"
-  description = "The WAF-protected ALB URL for the JSON Validator Lambda"
-  type        = "String"
-  value       = aws_lambda_function_url.json_validator_url.function_url
+  value       = aws_lb.main.dns_name
   overwrite   = true
 }
 
+output "alb_endpoint" {
+  value       = aws_lb.main.dns_name
+  description = "The ALB DNS name for accessing Lambda services"
+}
+
 output "character_counter_url" {
-  value       = aws_lambda_function_url.char_counter_url.function_url
-  description = "The direct endpoint for the Character Counter"
+  value       = "http://${aws_lb.main.dns_name}/count"
+  description = "Character Counter endpoint via ALB"
 }
 
 output "json_validator_url" {
-  value       = aws_lambda_function_url.json_validator_url.function_url
-  description = "The direct endpoint for the JSON Validator"
+  value       = "http://${aws_lb.main.dns_name}/validate"
+  description = "JSON Validator endpoint via ALB"
 }

@@ -30,11 +30,6 @@ resource "aws_lambda_function" "char_counter" {
   source_code_hash = data.archive_file.char_counter_zip.output_base64sha256
 }
 
-resource "aws_lambda_function_url" "char_counter_url" {
-  function_name      = aws_lambda_function.char_counter.function_name
-  authorization_type = "NONE"
-}
-
 data "archive_file" "json_validator_zip" {
   type        = "zip"
   source_dir  = "${path.module}/json_validator"
@@ -48,9 +43,4 @@ resource "aws_lambda_function" "json_validator" {
   handler          = "lambda_function.lambda_handler"
   runtime          = "python3.14"
   source_code_hash = data.archive_file.json_validator_zip.output_base64sha256
-}
-
-resource "aws_lambda_function_url" "json_validator_url" {
-  function_name      = aws_lambda_function.json_validator.function_name
-  authorization_type = "NONE"
 }
