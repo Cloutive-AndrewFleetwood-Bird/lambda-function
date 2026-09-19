@@ -7,7 +7,6 @@ Two serverless AWS Lambda functions for the development team.
 - **Character Counter** (`character-counter-service`) — Counts characters in a string
   - Input: Query parameter `string` or request body
   - Output: JSON with character count
-
 - **JSON Validator** (`json-validator-service`) — Validates JSON strings
   - Input: JSON string in request body
   - Output: JSON validation result
@@ -22,11 +21,13 @@ Two serverless AWS Lambda functions for the development team.
 ### Deploy
 
 ```bash
-export AWS_PROFILE=cloutive-personal
+export AWS_PROFILE=personal
 terraform init
 terraform plan
 terraform apply
 ```
+
+
 
 ### Outputs
 
@@ -37,7 +38,11 @@ character_counter_url = "https://<url-id>.lambda-url.eu-central-1.on.aws/"
 json_validator_url = "https://<url-id>.lambda-url.eu-central-1.on.aws/"
 ```
 
+
+
 ## Usage Examples
+
+
 
 ### Character Counter
 
@@ -45,6 +50,8 @@ json_validator_url = "https://<url-id>.lambda-url.eu-central-1.on.aws/"
 curl "https://<url>/character-counter-service?string=hello%20world"
 # Output: {"input_string": "hello world", "character_count": 11}
 ```
+
+
 
 ### JSON Validator
 
@@ -55,6 +62,8 @@ curl -X POST "https://<url>/json-validator-service" \
 # Output: {"valid": true, "message": "Valid JSON string"}
 ```
 
+
+
 ## Infrastructure
 
 - Lambda functions with direct HTTPS URLs
@@ -62,3 +71,4 @@ curl -X POST "https://<url>/json-validator-service" \
 - DynamoDB state locking for team collaboration
 - IAM roles with Lambda basic execution permissions
 - Parameter Store integration for URL storage
+
