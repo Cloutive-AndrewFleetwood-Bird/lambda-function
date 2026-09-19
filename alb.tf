@@ -1,7 +1,7 @@
 variable "allowed_cidr" {
   description = "CIDR block allowed to access the ALB"
   type        = string
-  default     = "0.0.0.0/0"  # Change this to your IP/CIDR, e.g., "203.0.113.0/32"
+  default     = "63.176.242.1/32"  # Change this to your IP/CIDR, e.g., "203.0.113.0/32"
 }
 
 resource "aws_security_group" "alb_sg" {
