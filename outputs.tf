@@ -3,12 +3,15 @@ output "alb_endpoint" {
   description = "The ALB DNS name for accessing Lambda services"
 }
 
-output "character_counter_url" {
-  value       = "http://${aws_lb.main.dns_name}/count"
-  description = "Character Counter endpoint via ALB"
+output "lambda_endpoints" {
+  value = {
+    for name, config in var.lambda_functions :
+    name => "http://${aws_lb.main.dns_name}${config.route}"
+  }
+  description = "Endpoints for all deployed Lambda functions"
 }
 
-output "json_validator_url" {
-  value       = "http://${aws_lb.main.dns_name}/validate"
-  description = "JSON Validator endpoint via ALB"
+output "lambda_function_names" {
+  value       = [for fn in aws_lambda_function.functions : fn.function_name]
+  description = "Names of deployed Lambda functions"
 }

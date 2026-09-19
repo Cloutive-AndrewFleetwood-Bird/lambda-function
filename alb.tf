@@ -1,9 +1,3 @@
-variable "allowed_cidr" {
-  description = "CIDR block allowed to access the ALB"
-  type        = string
-  default     = "63.176.242.1/32"  # Change this to your IP/CIDR, e.g., "203.0.113.0/32"
-}
-
 resource "aws_security_group" "alb_sg" {
   name        = "cinfra-alb-sg"
   description = "Security group for ALB"
@@ -122,42 +116,33 @@ resource "aws_lb" "main" {
   }
 }
 
-resource "aws_lb_target_group" "char_counter" {
-  name        = "char-counter-tg"
+# Create target groups dynamically
+resource "aws_lb_target_group" "functions" {
+  for_each    = var.lambda_functions
+  name        = "${replace(each.key, "_", "-")}-tg"
   target_type = "lambda"
+
+  tags = {
+    Name = "${each.key}-target-group"
+  }
 }
 
-resource "aws_lb_target_group" "json_validator" {
-  name        = "json-validator-tg"
-  target_type = "lambda"
-}
-
-resource "aws_lambda_permission" "alb_char_counter" {
+# Create Lambda permissions for ALB invocation
+resource "aws_lambda_permission" "alb_invoke" {
+  for_each      = var.lambda_functions
   statement_id  = "AllowALBInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.char_counter.function_name
+  function_name = aws_lambda_function.functions[each.key].function_name
   principal     = "elasticloadbalancing.amazonaws.com"
-  source_arn    = aws_lb_target_group.char_counter.arn
+  source_arn    = aws_lb_target_group.functions[each.key].arn
 }
 
-resource "aws_lambda_permission" "alb_json_validator" {
-  statement_id  = "AllowALBInvoke"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.json_validator.function_name
-  principal     = "elasticloadbalancing.amazonaws.com"
-  source_arn    = aws_lb_target_group.json_validator.arn
-}
-
-resource "aws_lb_target_group_attachment" "char_counter" {
-  target_group_arn = aws_lb_target_group.char_counter.arn
-  target_id        = aws_lambda_function.char_counter.arn
-  depends_on       = [aws_lambda_permission.alb_char_counter]
-}
-
-resource "aws_lb_target_group_attachment" "json_validator" {
-  target_group_arn = aws_lb_target_group.json_validator.arn
-  target_id        = aws_lambda_function.json_validator.arn
-  depends_on       = [aws_lambda_permission.alb_json_validator]
+# Attach Lambda functions to target groups
+resource "aws_lb_target_group_attachment" "functions" {
+  for_each         = var.lambda_functions
+  target_group_arn = aws_lb_target_group.functions[each.key].arn
+  target_id        = aws_lambda_function.functions[each.key].arn
+  depends_on       = [aws_lambda_permission.alb_invoke]
 }
 
 resource "aws_lb_listener" "http" {
@@ -169,40 +154,26 @@ resource "aws_lb_listener" "http" {
     type = "fixed-response"
     fixed_response {
       content_type = "text/plain"
-      message_body = "Not Found - Use /count or /validate"
+      message_body = "Not Found - Available routes: ${join(", ", [for fn in var.lambda_functions : fn.route])}"
       status_code  = "404"
     }
   }
 }
 
-resource "aws_lb_listener_rule" "char_counter" {
+# Create listener rules dynamically
+resource "aws_lb_listener_rule" "functions" {
+  for_each     = var.lambda_functions
   listener_arn = aws_lb_listener.http.arn
-  priority     = 10
+  priority     = index(keys(var.lambda_functions), each.key) + 10
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.char_counter.arn
+    target_group_arn = aws_lb_target_group.functions[each.key].arn
   }
 
   condition {
     path_pattern {
-      values = ["/count"]
-    }
-  }
-}
-
-resource "aws_lb_listener_rule" "json_validator" {
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 20
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.json_validator.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/validate"]
+      values = [each.value.route]
     }
   }
 }
