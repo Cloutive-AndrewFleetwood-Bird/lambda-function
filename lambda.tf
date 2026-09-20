@@ -32,16 +32,26 @@ data "archive_file" "lambda_functions" {
 resource "aws_lambda_function" "functions" {
   for_each         = var.lambda_functions
   filename         = data.archive_file.lambda_functions[each.key].output_path
-  function_name    = each.key
+  function_name    = "${each.key}-${var.environment}"
   role             = aws_iam_role.lambda_exec.arn
   handler          = each.value.handler
   runtime          = "python3.14"
+  timeout          = var.lambda_timeout
+  memory_size      = var.lambda_memory
   source_code_hash = data.archive_file.lambda_functions[each.key].output_base64sha256
 
   vpc_config {
     subnet_ids         = [aws_subnet.private_1.id, aws_subnet.private_2.id]
     security_group_ids = [aws_security_group.lambda_sg.id]
   }
+
+  tags = merge(
+    var.tags,
+    {
+      Name        = each.key
+      Environment = var.environment
+    }
+  )
 
   depends_on = [
     aws_iam_role_policy_attachment.lambda_basic_execution,
