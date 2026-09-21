@@ -38,12 +38,12 @@ module "alb" {
 module "api_gateway" {
   source = "./modules/api_gateway"
 
-  environment              = var.environment
-  lambda_functions         = module.lambda.function_details
-  invoke_arns              = module.lambda.invoke_arns
-  api_gateway_allowed_ips  = var.api_gateway_allowed_ips
-  log_retention_days       = var.log_retention_days
-  tags                     = var.tags
+  environment             = var.environment
+  lambda_functions        = module.lambda.function_details
+  invoke_arns             = module.lambda.invoke_arns
+  api_gateway_allowed_ips = var.api_gateway_allowed_ips
+  log_retention_days      = var.log_retention_days
+  tags                    = var.tags
 
   depends_on = [module.lambda]
 }
