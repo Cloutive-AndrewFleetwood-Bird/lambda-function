@@ -1,30 +1,42 @@
 output "alb_endpoint" {
-  value       = aws_lb.main.dns_name
+  value       = module.alb.alb_dns_name
   description = "The ALB DNS name for accessing Lambda services"
 }
 
 output "lambda_endpoints" {
   value = {
     for name, config in var.lambda_functions :
-    name => "http://${aws_lb.main.dns_name}${config.route}"
+    name => "http://${module.alb.alb_dns_name}${config.route}"
   }
-  description = "Endpoints for all deployed Lambda functions"
-}
-
-output "lambda_function_names" {
-  value       = [for fn in aws_lambda_function.functions : fn.function_name]
-  description = "Names of deployed Lambda functions"
+  description = "Endpoints for all deployed Lambda functions via ALB"
 }
 
 output "api_gateway_endpoint" {
-  value       = aws_apigatewayv2_stage.default.invoke_url
+  value       = module.api_gateway.api_endpoint
   description = "The API Gateway endpoint URL"
 }
 
 output "api_gateway_lambda_endpoints" {
-  value = {
-    for name, config in var.lambda_functions :
-    name => "${aws_apigatewayv2_stage.default.invoke_url}${config.route}"
-  }
+  value       = module.api_gateway.api_lambda_endpoints
   description = "Direct API Gateway endpoints for each Lambda function"
+}
+
+output "lambda_function_names" {
+  value       = module.lambda.all_function_names
+  description = "Names of deployed Lambda functions"
+}
+
+output "vpc_id" {
+  value       = module.networking.vpc_id
+  description = "VPC ID"
+}
+
+output "public_subnet_ids" {
+  value       = module.networking.public_subnet_ids
+  description = "Public subnet IDs"
+}
+
+output "private_subnet_ids" {
+  value       = module.networking.private_subnet_ids
+  description = "Private subnet IDs"
 }

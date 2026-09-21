@@ -73,14 +73,6 @@ variable "alb_enable_logging" {
   default     = true
 }
 
-variable "tags" {
-  description = "Common tags for all resources"
-  type        = map(string)
-  default = {
-    ManagedBy = "terraform"
-  }
-}
-
 variable "api_gateway_allowed_ips" {
   description = "List of allowed IP addresses/CIDR blocks for API Gateway access"
   type        = list(string)
@@ -91,3 +83,10 @@ variable "api_gateway_allowed_ips" {
   }
 }
 
+variable "tags" {
+  description = "Common tags for all resources"
+  type        = map(string)
+  default = {
+    ManagedBy = "terraform"
+  }
+}

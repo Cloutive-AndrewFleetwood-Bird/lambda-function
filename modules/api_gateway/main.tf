@@ -1,5 +1,3 @@
-# HTTP API Gateway with IP Restriction (Your Access Only)
-
 resource "aws_apigatewayv2_api" "main" {
   name          = "cinfra-api-${var.environment}"
   protocol_type = "HTTP"
@@ -20,7 +18,6 @@ resource "aws_apigatewayv2_api" "main" {
   )
 }
 
-# Lambda Integrations
 resource "aws_apigatewayv2_integration" "lambda" {
   for_each = var.lambda_functions
 
@@ -28,30 +25,27 @@ resource "aws_apigatewayv2_integration" "lambda" {
   integration_type   = "AWS_PROXY"
   integration_method = "POST"
   payload_format_version = "2.0"
-  integration_uri    = aws_lambda_function.functions[each.key].invoke_arn
+  integration_uri    = var.invoke_arns[each.key]
 }
 
-# Routes
 resource "aws_apigatewayv2_route" "lambda" {
   for_each = var.lambda_functions
 
   api_id    = aws_apigatewayv2_api.main.id
-  route_key = "${each.value.http_method} ${each.value.route}"
+  route_key = "${each.value.method} ${each.value.route}"
   target    = "integrations/${aws_apigatewayv2_integration.lambda[each.key].id}"
 }
 
-# Lambda Permissions (Allow API Gateway to invoke)
 resource "aws_lambda_permission" "api_gateway" {
   for_each = var.lambda_functions
 
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.functions[each.key].function_name
+  function_name = each.value.name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*"
 }
 
-# Stage (Auto-deployed)
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.main.id
   name        = "$default"
@@ -74,7 +68,6 @@ resource "aws_apigatewayv2_stage" "default" {
   tags = merge(var.tags, { Name = "api-stage" })
 }
 
-# CloudWatch Logs for API Gateway
 resource "aws_cloudwatch_log_group" "api_logs" {
   name              = "/aws/apigateway/cinfra-api-${var.environment}"
   retention_in_days = var.log_retention_days
@@ -82,7 +75,6 @@ resource "aws_cloudwatch_log_group" "api_logs" {
   tags = merge(var.tags, { Name = "api-logs" })
 }
 
-# CloudWatch Alarms
 resource "aws_cloudwatch_metric_alarm" "api_4xx_errors" {
   alarm_name          = "cinfra-api-4xx-errors-${var.environment}"
   comparison_operator = "GreaterThanThreshold"
