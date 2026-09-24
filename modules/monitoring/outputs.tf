@@ -5,8 +5,8 @@ output "alb_log_group_name" {
 
 output "lambda_log_group_names" {
   value = {
-    for name, lg in aws_cloudwatch_log_group.lambda_logs :
-    name => lg.name
+    for name in var.lambda_function_names :
+    name => "/aws/lambda/${name}"
   }
-  description = "Lambda log group names"
+  description = "Lambda log group names (auto-created by Lambda)"
 }

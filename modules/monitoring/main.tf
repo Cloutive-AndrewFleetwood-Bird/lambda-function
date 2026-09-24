@@ -41,11 +41,6 @@ resource "aws_cloudwatch_metric_alarm" "alb_target_unhealthy" {
   tags = var.tags
 }
 
-resource "aws_cloudwatch_log_group" "lambda_logs" {
-  for_each = toset(var.lambda_function_names)
-
-  name              = "/aws/lambda/${each.value}"
-  retention_in_days = var.log_retention_days
-
-  tags = merge(var.tags, { Name = "${each.value}-logs" })
-}
+# Lambda auto-creates log groups, but we can't manage them directly
+# Instead, we can use aws_lambda_function's log_group_name output
+# For now, just skip creating them - Lambda handles it
