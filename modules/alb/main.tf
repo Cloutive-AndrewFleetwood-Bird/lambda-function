@@ -21,6 +21,7 @@ resource "aws_lb_target_group" "lambda" {
   name        = substr("${each.key}-tg-${var.environment}", 0, 32)
   vpc_id      = var.vpc_id
   target_type = "lambda"
+  deregistration_delay = 60
 
   tags = merge(
     var.tags,
@@ -35,6 +36,8 @@ resource "aws_lb_target_group_attachment" "lambda" {
 
   target_group_arn = aws_lb_target_group.lambda[each.key].arn
   target_id        = each.value.arn
+
+  depends_on = [aws_lambda_permission.alb]
 }
 
 resource "aws_lb_listener" "main" {
